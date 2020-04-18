@@ -22,7 +22,7 @@ const OrderSchema = new Schema({
     status: {
         type: String,
         enum: ["ordered", "delivered"],
-        default: "new"
+        default: "ordered"
     },
     quantity: {
         type: Number,
