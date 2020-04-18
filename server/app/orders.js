@@ -39,11 +39,11 @@ router.put('/:id', auth, permit('admin'), async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
     try {
-        const {productId, quantity, name, price} = req.body;
+        const {productId, quantity, title, price} = req.body;
 
         const order = await Order.create({
             user: req.user._id,
-            products: [{productId, quantity, name, price}],
+            products: [{productId, quantity, title, price}],
             quantity: findNumber('quantity'),
             totalPrice: findNumber('price')
         });

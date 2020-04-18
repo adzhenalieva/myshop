@@ -1,6 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const ShoppingCart = require('../models/ShoppingCart');
+const Product = require('../models/Product');
 
 const router = express.Router();
 
@@ -34,33 +35,46 @@ router.put('/', auth, async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
-    const {productId, quantity, name, price} = req.body;
 
     try {
         let cart = await ShoppingCart.findOne({user: req.user._id});
+        let product  = await Product.findById(req.body.productId);
         if (cart) {
-            let itemIndex = cart.products.findIndex(p => p.productId === productId);
+            let itemIndex = cart.products.findIndex(p => p.productId.equals(product._id));
 
             if (itemIndex > -1) {
                 let productItem = cart.products[itemIndex];
-                productItem.quantity = quantity;
+                productItem.quantity = parseFloat(productItem.quantity) + parseFloat(req.body.quantity);
+                productItem.price = parseFloat(productItem.price) + parseFloat(product.price);
                 cart.products[itemIndex] = productItem;
-                cart.quantity = findNumber('quantity');
-                cart.totalPrice = findNumber('price');
+                cart.quantity = findNumber('quantity', cart.products);
+                cart.totalPrice = findNumber('price', cart.products);
 
             } else {
-                cart.products.push({productId, quantity, name, price});
-                cart.quantity = findNumber('quantity');
-                cart.totalPrice = findNumber('price');
+                const newProductItem = {
+                    productId: product._id,
+                    quantity: req.body.quantity,
+                    title: product.title,
+                    price: product.price
+                };
+                cart.products.push(newProductItem);
+                cart.quantity = findNumber('quantity', cart.products);
+                cart.totalPrice = findNumber('price', cart.products);
             }
             cart = await cart.save();
             return res.status(201).send(cart);
         } else {
+            const newProductItem = {
+                productId: product._id,
+                quantity: req.body.quantity,
+                title: product.title,
+                price: product.price
+            };
             const newCart = await ShoppingCart.create({
                 user: req.user._id,
-                products: [{productId, quantity, name, price}],
-                quantity: findNumber('quantity'),
-                totalPrice: findNumber('price')
+                products: [newProductItem],
+                quantity: req.body.quantity,
+                totalPrice: product.price
             });
 
             return res.status(201).send(newCart);
